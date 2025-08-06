@@ -1,0 +1,107 @@
+# Resolve react_native_pods.rb with node to allow for hoisting
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+
+platform :ios, min_ios_version_supported
+prepare_react_native_project!
+
+# Use modular headers for Firebase compatibility
+use_modular_headers!
+
+# Firebase configuration
+$FirebaseSDKVersion = '11.13.0'
+
+# Disable Flipper completely to avoid module conflicts
+flipper_config = FlipperConfiguration.disabled
+
+linkage = ENV['USE_FRAMEWORKS']
+if linkage != nil
+  Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green
+  use_frameworks! :linkage => linkage.to_sym
+else
+  # Use static libraries for better compatibility
+  use_frameworks! :linkage => :static
+end
+
+target 'TringSOS' do
+  config = use_native_modules!
+
+  use_react_native!(
+    :path => config[:reactNativePath],
+    # Enables Flipper.
+    #
+    # Note that if you have use_frameworks! enabled, Flipper will not work and
+    # you should disable the next line.
+    :flipper_configuration => flipper_config,
+    # An absolute path to your application root.
+    :app_path => "#{Pod::Config.instance.installation_root}/.."
+  )
+
+  target 'TringSOSTests' do
+    inherit! :complete
+    # Pods for testing
+  end
+
+  post_install do |installer|
+    # https://github.com/facebook/react-native/blob/main/packages/react-native/scripts/react_native_pods.rb#L197-L202
+    react_native_post_install(
+      installer,
+      config[:reactNativePath],
+      :mac_catalyst_enabled => false
+    )
+    
+    # Firebase Swift module verification fixes
+    installer.pods_project.targets.each do |target|
+      target.build_configurations.each do |config|
+        # Fix deployment target warnings
+        config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '13.4'
+        
+        # Fix Firebase framework linking and Swift module issues
+        if target.name.include?('Firebase')
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'NO'
+          config.build_settings['DEFINES_MODULE'] = 'NO'
+          config.build_settings['SWIFT_VERSION'] = '5.0'
+          config.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+          config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+          config.build_settings['SWIFT_EMIT_LOC_STRINGS'] = 'NO'
+          config.build_settings['SWIFT_OPTIMIZATION_LEVEL'] = '-Onone'
+          config.build_settings['SWIFT_EMIT_MODULE_INTERFACE'] = 'NO'
+          config.build_settings['SWIFT_VERIFY_EMITTED_MODULE_INTERFACE'] = 'NO'
+          config.build_settings['CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER'] = 'NO'
+          config.build_settings['CLANG_WARN_DOCUMENTATION_COMMENTS'] = 'NO'
+        end
+        
+        # Enable module definition for GoogleUtilities to fix Swift import issues
+        if target.name.include?('GoogleUtilities')
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+        end
+        
+        # Fix FirebaseDatabase Swift compilation issues
+        if target.name.include?('FirebaseDatabase')
+          config.build_settings['SWIFT_VERSION'] = '5.0'
+          config.build_settings['SWIFT_TREAT_WARNINGS_AS_ERRORS'] = 'NO'
+          config.build_settings['SWIFT_SUPPRESS_WARNINGS'] = 'YES'
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+          config.build_settings['SWIFT_INSTALL_OBJC_HEADER'] = 'YES'
+        end
+        
+        # Fix FirebaseCore module definition for FirebaseMessaging
+        if target.name.include?('FirebaseCore')
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+        end
+        
+        # Fix FirebaseFirestoreInternal module definition for FirebaseFirestore
+        if target.name.include?('FirebaseFirestoreInternal')
+          config.build_settings['DEFINES_MODULE'] = 'YES'
+          config.build_settings['BUILD_LIBRARY_FOR_DISTRIBUTION'] = 'YES'
+        end
+      end
+    end
+  end
+end

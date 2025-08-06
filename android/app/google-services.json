@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "423810195957",
+    "firebase_url": "https://womensos-19b13-default-rtdb.firebaseio.com",
+    "project_id": "womensos-19b13",
+    "storage_bucket": "womensos-19b13.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:423810195957:android:281f0f8646ef0ae91a80bc",
+        "android_client_info": {
+          "package_name": "com.tringapps.womensos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBbWZaW-41mL8VnfhmJqp1KIQd8xUm84Q0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
