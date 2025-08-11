@@ -17,16 +17,27 @@ const api = axios.create({
 // Add a request interceptor
 api.interceptors.request.use(
   async config => {
-    // Get token from AsyncStorage
-    const token = await AsyncStorage.getItem('token');
-    // If token exists, add it to the Authorization header
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+    try {
+      // Get token from AsyncStorage
+      const token = await AsyncStorage.getItem('token');
+      console.log('Token retrieved:', token ? 'exists' : 'missing');
+      
+      // If token exists, add it to the Authorization header
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+        console.log('Authorization header set');
+      } else {
+        console.log('No token found, request will be sent without authorization');
+      }
 
-    return config;
+      return config;
+    } catch (error) {
+      console.error('Error in request interceptor:', error);
+      return Promise.reject(error);
+    }
   },
   error => {
+    console.error('Request interceptor error:', error);
     return Promise.reject(error);
   },
 );
@@ -37,18 +48,28 @@ api.interceptors.response.use(
   async error => {
     const originalRequest = error.config;
     console.log('Error response:', error);
-    console.log('Original response:', error.response.data);
+    console.log('Error status:', error?.response?.status);
+    console.log('Error data:', error?.response?.data);
+    console.log('Request URL:', error?.config?.url);
+    console.log('Request headers:', error?.config?.headers);
+    
     // If error is 401 (Unauthorized) and we haven't already tried to refresh
     if (error?.response?.status === 401 && !originalRequest?._retry) {
       originalRequest._retry = true;
+      console.log('401 Unauthorized error detected, attempting to handle...');
 
-      // Try to refresh the token here if you have a refresh token mechanism
-      // For now, we'll just clear storage and redirect to login
-      if (error.response.data.message === 'Token expired') {
+      // Check if it's a token expired issue
+      if (error.response.data?.message === 'Token expired') {
+        console.log('Token expired, clearing storage...');
         await AsyncStorage.clear();
         // You might want to navigate to login screen here
         // navigation.navigate('Login');
-      } 
+      } else {
+        console.log('401 error but not token expired, might be missing token');
+        // Check if we have a token stored
+        const storedToken = await AsyncStorage.getItem('token');
+        console.log('Stored token exists:', !!storedToken);
+      }
     }
 
     return Promise.reject(error);

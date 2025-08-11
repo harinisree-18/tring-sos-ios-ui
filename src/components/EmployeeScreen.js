@@ -71,6 +71,7 @@ import MyRoutesScreen from './MyRoutesScreen';
 import SafetyTipsScreen from './SafetyTipsScreen';
 import AreYouSafeScreen from './AreYouSafeScreen';
 import {
+  playEmergencySound,
   stopEmergencySound,
   isEmergencySoundPlaying,
 } from '../services/soundService';
@@ -200,6 +201,44 @@ export default function EmployeeScreen({
   initialNavigation,
   onNavigationHandled,
 }) {
+  // Log FCM token for debugging
+  useEffect(() => {
+    if (fcmToken) {
+      console.log('EmployeeScreen: FCM Token available:', fcmToken);
+    } else {
+      console.log('EmployeeScreen: No FCM Token available');
+    }
+    
+    // Also check AsyncStorage for FCM token
+    const checkFCMTokenInStorage = async () => {
+      try {
+        const storedFCMToken = await AsyncStorage.getItem('fcmToken');
+        console.log('EmployeeScreen: FCM Token in AsyncStorage:', storedFCMToken ? 'Available' : 'Not available');
+        if (storedFCMToken) {
+          console.log('EmployeeScreen: Stored FCM Token length:', storedFCMToken.length);
+        }
+        
+        // If no FCM token in storage, try to get a fresh one
+        if (!storedFCMToken) {
+          console.log('No FCM token in storage, attempting to get fresh token...');
+          try {
+            const { getFCMToken } = require('../notifications/NotificationService');
+            const freshToken = await getFCMToken();
+            if (freshToken) {
+              await AsyncStorage.setItem('fcmToken', freshToken);
+              console.log('Fresh FCM token obtained and stored during initialization');
+            }
+          } catch (error) {
+            console.error('Failed to get fresh FCM token during initialization:', error);
+          }
+        }
+      } catch (error) {
+        console.error('EmployeeScreen: Error checking FCM token in AsyncStorage:', error);
+      }
+    };
+    
+    checkFCMTokenInStorage();
+  }, [fcmToken]);
   const [isSending, setIsSending] = useState(false);
   const [isSafe, setIsSafe] = useState(true);
   const [lastSwipeOut, setLastSwipeOut] = useState(null);
@@ -629,7 +668,26 @@ export default function EmployeeScreen({
         async position => {
           const {latitude, longitude} = position.coords;
           try {
-            const response = await api.post('/sos-alerts', {
+            // Get FCM token for SOS notification
+            let fcmToken = await AsyncStorage.getItem('fcmToken');
+            console.log('FCM token for SOS alert:', fcmToken ? 'Available' : 'Not available');
+            
+            // If no FCM token, try to get a fresh one
+            if (!fcmToken) {
+              console.log('No FCM token found, attempting to get fresh token...');
+              try {
+                const { getFCMToken } = require('../notifications/NotificationService');
+                fcmToken = await getFCMToken();
+                if (fcmToken) {
+                  await AsyncStorage.setItem('fcmToken', fcmToken);
+                  console.log('Fresh FCM token obtained and stored');
+                }
+              } catch (error) {
+                console.error('Failed to get fresh FCM token:', error);
+              }
+            }
+            
+            const sosPayload = {
               userId: userId,
               location: JSON.stringify({
                 type: 'Point',
@@ -639,15 +697,29 @@ export default function EmployeeScreen({
               // timestamp: new Date().toISOString(),
               is_live: true,
               is_admin: toggles?.isControllerAllowed,
-            });
+              fcmToken: fcmToken, // Include FCM token for notifications
+            };
+            
+            console.log('SOS alert payload:', sosPayload);
+            
+            const response = await api.post('/sos-alerts', sosPayload);
 
             if (response.data.success) {
+              console.log('SOS alert created successfully:', response.data);
+              console.log('SOS ID:', response.data.alert.id);
+              console.log('Employee Name:', response.data.alert.employeeName);
+              console.log('User Name from state:', userName);
+              
               Alert.alert(
                 t('employee.sosActivated'),
                 t('employee.helpOnTheWayLiveLocation'),
               );
               // startLocationTracking();
               const {id, employeeName: alertEmployeeName} = response.data.alert;
+              
+              // Use userName from state if employeeName is not available
+              const finalEmployeeName = alertEmployeeName || userName || 'Unknown Employee';
+              console.log('Final Employee Name to use:', finalEmployeeName);
               
               // Update Firebase sos_routes with initial location
               try {
@@ -689,16 +761,8 @@ export default function EmployeeScreen({
               await setPersistedSosId(id);
               startLocationTracking(id);
 
-              // Send notification with dynamic SOS ID and employee ID
-              // await api.post('/send-notification', {
-              //   title: 'Emergency Alert',
-              //   body: `An SOS has been triggered by ${alertEmployeeName}`,
-              //   data: {
-              //     sosId: id.toString(),
-              //     employeeId: employeeId.toString(), // Dynamic employee ID
-              //     is_admin: triggerAdmin,
-              //   },
-              // });
+              // Backend automatically sends SOS notifications to contacts and admin
+              console.log('SOS alert created successfully. Backend will handle sending notifications to contacts and admin.');
             } else {
               Alert.alert(
                 t('common.error'),
@@ -762,16 +826,43 @@ export default function EmployeeScreen({
 
   const sendSOSWithoutLocation = async triggerAdmin => {
     try {
-      const response = await api.post('/sos-alerts', {
+      // Get FCM token for SOS notification
+      let fcmToken = await AsyncStorage.getItem('fcmToken');
+      console.log('FCM token for SOS alert (without location):', fcmToken ? 'Available' : 'Not available');
+      
+      // If no FCM token, try to get a fresh one
+      if (!fcmToken) {
+        console.log('No FCM token found (without location), attempting to get fresh token...');
+        try {
+          const { getFCMToken } = require('../notifications/NotificationService');
+          fcmToken = await getFCMToken();
+          if (fcmToken) {
+            await AsyncStorage.setItem('fcmToken', fcmToken);
+            console.log('Fresh FCM token obtained and stored (without location)');
+          }
+        } catch (error) {
+          console.error('Failed to get fresh FCM token (without location):', error);
+        }
+      }
+      
+      const sosPayload = {
         userId: userId,
         // employeeName,
         location: 'Location unavailable',
         // timestamp: new Date().toISOString(),
         is_live: true,
         is_admin: triggerAdmin,
-      });
+        fcmToken: fcmToken, // Include FCM token for notifications
+      };
+      
+      console.log('SOS alert payload (without location):', sosPayload);
+      
+      const response = await api.post('/sos-alerts', sosPayload);
 
       if (response.data.success) {
+        console.log('SOS alert created successfully (without location):', response.data);
+        console.log('SOS ID:', response.data.alert.id);
+        
         Alert.alert(
           t('employee.sosActivated'),
           t('employee.helpOnTheWayLiveLocation'),
@@ -783,15 +874,8 @@ export default function EmployeeScreen({
         await startStreaming(id.toString(), userId.toString());
         await setPersistedSosId(id);
         startLocationTracking(id);
-        // Send notification for SOS without location
-        // await api.post('/send-notification', {
-        //   title: 'Emergency Alert',
-        //   body: 'An SOS has been triggered by an employee',
-        //   data: {
-        //     sosId: id.toString(),
-        //     employeeId: employeeId.toString(),
-        //   },
-        // });
+        // Backend automatically sends SOS notifications to contacts and admin
+        console.log('SOS alert created successfully (without location). Backend will handle sending notifications to contacts and admin.');
       }
     } catch (err) {
       console.log('sendSOSWithoutLocation error:', err);
@@ -958,6 +1042,7 @@ export default function EmployeeScreen({
         }
         setIsSosActive(false);
         setIsSending(false);
+        
         // Reset Firebase update interval to 30 minutes
         await backgroundLocationService.setFirebaseUpdateInterval(
           30 * 60 * 1000,
@@ -1913,6 +1998,8 @@ export default function EmployeeScreen({
             {t('common.back', 'Back')}
           </Text>
         </TouchableOpacity>
+        
+
       </ScrollView>
     );
   } else if (navPage === NAV_CHAT) {
@@ -2002,6 +2089,8 @@ export default function EmployeeScreen({
               </Text>
             </TouchableOpacity>
           </View>
+          
+          
           {/* {isSosActive && (
             <View style={styles.sosStreamingInfoBox}>
               <Icon name="videocam" size={24} color="#fff" style={{ marginRight: 8, marginLeft: 24 }} />

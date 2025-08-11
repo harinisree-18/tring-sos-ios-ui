@@ -11,6 +11,7 @@
 		13B07FBC1A68108700A75B9A /* AppDelegate.mm in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB01A68108700A75B9A /* AppDelegate.mm */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
 		13B07FC11A68108700A75B9A /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 13B07FB71A68108700A75B9A /* main.m */; };
+		491994F22E49B7BD000EB34B /* emergency.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 491994F12E49B7BD000EB34B /* emergency.mp3 */; };
 		50C0684EA9EC6217FAAE1823 /* Pods_TringSOS_TringSOSTests.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 8A6A05BE00CFBC6067779ACC /* Pods_TringSOS_TringSOSTests.framework */; };
 		81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */; };
 		D808B2AB0FFDE698D4E9AF57 /* Pods_TringSOS.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2B4838E00F1979F941763F94 /* Pods_TringSOS.framework */; };
@@ -39,6 +40,7 @@
 		2B4838E00F1979F941763F94 /* Pods_TringSOS.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TringSOS.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		2F2E55AC89119C153E5F39F2 /* Pods-TringSOS-TringSOSTests.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TringSOS-TringSOSTests.release.xcconfig"; path = "Target Support Files/Pods-TringSOS-TringSOSTests/Pods-TringSOS-TringSOSTests.release.xcconfig"; sourceTree = "<group>"; };
 		32EE9869848E7A1168DCA059 /* Pods-TringSOS.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TringSOS.release.xcconfig"; path = "Target Support Files/Pods-TringSOS/Pods-TringSOS.release.xcconfig"; sourceTree = "<group>"; };
+		491994F12E49B7BD000EB34B /* emergency.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = emergency.mp3; sourceTree = "<group>"; };
 		6CA023CC8C4C77128EC45715 /* Pods-TringSOS-TringSOSTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-TringSOS-TringSOSTests.debug.xcconfig"; path = "Target Support Files/Pods-TringSOS-TringSOSTests/Pods-TringSOS-TringSOSTests.debug.xcconfig"; sourceTree = "<group>"; };
 		81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = TringSOS/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		8A6A05BE00CFBC6067779ACC /* Pods_TringSOS_TringSOSTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_TringSOS_TringSOSTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -116,6 +118,7 @@
 		83CBB9F61A601CBA00E9B192 = {
 			isa = PBXGroup;
 			children = (
+				491994F12E49B7BD000EB34B /* emergency.mp3 */,
 				13B07FAE1A68108700A75B9A /* TringSOS */,
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				00E356EF1AD99517003FC87E /* TringSOSTests */,
@@ -243,6 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				81AB9BB82411601600AC10FF /* LaunchScreen.storyboard in Resources */,
+				491994F22E49B7BD000EB34B /* emergency.mp3 in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

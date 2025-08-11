@@ -16,6 +16,7 @@ import {
   PermissionsAndroid,
   LogBox,
   NativeModules,
+  AppState,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LinearGradient from 'react-native-linear-gradient';
@@ -208,7 +209,9 @@ export default function App() {
           if (token) {
             setFcmToken(token);
             console.log('FCM Token:', token);
-            // You should send this token to your server
+            // Store FCM token in AsyncStorage for future use
+            await AsyncStorage.setItem('fcmToken', token);
+            console.log('FCM token stored in AsyncStorage during app initialization');
           }
         } catch (firebaseError) {
           console.warn('Firebase initialization failed, continuing without notifications:', firebaseError);
@@ -217,6 +220,16 @@ export default function App() {
         console.error('Error initializing app:', error);
       }
     };
+
+    // Set up app state change listener for FCM token refresh
+    const handleAppStateChange = (nextAppState) => {
+      if (nextAppState === 'active' && global.refreshFCMToken) {
+        console.log('App became active, calling FCM token refresh...');
+        global.refreshFCMToken();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
 
     // Handle notification when app is opened from quit state
     const handleInitialNotification = async () => {
@@ -239,6 +252,13 @@ export default function App() {
         console.warn(
           'Firebase messaging not available for initial notification check',
         );
+      }
+    };
+
+    // Cleanup function
+    return () => {
+      if (subscription) {
+        subscription.remove();
       }
     };
 
@@ -353,6 +373,12 @@ export default function App() {
         console.log('access_token_current', response.data.access_token);
         await AsyncStorage.setItem('token', response.data.access_token);
         await AsyncStorage.setItem('user', JSON.stringify(response.data.user));
+        
+        // Store FCM token for future use
+        if (fcmToken) {
+          await AsyncStorage.setItem('fcmToken', fcmToken);
+          console.log('FCM token stored in AsyncStorage');
+        }
 
         setRole(
           response.data.user.role?.name || response.data.user.role || null,
